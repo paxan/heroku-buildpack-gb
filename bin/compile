@@ -1,0 +1,115 @@
+#!/bin/bash
+# usage: bin/compile <build-dir> <cache-dir> <env-dir>
+
+set -eo pipefail
+
+# Go releases for Darwin beginning with 1.2rc1
+# have included more than one build, depending
+# on the specific version of Mac OS X. Try to
+# account for that, but don't try too hard.
+# This doesn't affect Heroku builds, it's only
+# for testing on Darwin systems.
+platext() {
+    case $1 in
+    go1.0*|go1.1beta*|go1.1rc*|go1.1|go1.1.*) return ;;
+    esac
+    case $(uname|tr A-Z a-z) in
+    darwin) printf %s -osx10.8 ;;
+    esac
+}
+
+# Go releases have moved to a new URL scheme
+# starting with Go version 1.2.2. Return the old
+# location for known old versions and the new
+# location otherwise.
+urlfor() {
+    ver=$1
+    file=$2
+    case $ver in
+    go1.0*|go1.1beta*|go1.1rc*|go1.1|go1.1.*|go1.2beta*|go1.2rc*|go1.2|go1.2.1)
+        echo http://go.googlecode.com/files/$file
+        ;;
+    *)
+        echo https://storage.googleapis.com/golang/$file
+        ;;
+    esac
+}
+
+# sed -l basically makes sed replace and buffer through stdin to stdout
+# so you get updates while the command runs and dont wait for the end
+# e.g. npm install | indent
+# borrowed from: https://github.com/heroku/heroku-buildpack-jvm-common/blob/73232a1194e7c3f5b66e3e8de21e83ee95f2d6dc/bin/util#L49-L59
+indent() {
+  # if an arg is given it's a flag indicating we shouldn't indent the first line, so use :+ to tell SED accordingly if that parameter is set, otherwise null string for no range selector prefix (it selects from line 2 onwards and then every 1st line, meaning all lines)
+  c="${1:+"2,999"} s/^/       /"
+  case $(uname) in
+    Darwin) sed -l "$c";; # mac/bsd sed: -l buffers on line boundaries
+    *)      sed -u "$c";; # unix/gnu sed: -u unbuffered (arbitrary) chunks of data
+  esac
+}
+
+mkdir -p "$1" "$2"
+build=$(cd "$1/" && pwd)
+cache=$(cd "$2/" && pwd)
+env_dir="$3"
+buildpack=$(cd "$(dirname ${BASH_SOURCE[0]})/.." && pwd)
+arch=$(uname -m|tr A-Z a-z)
+if test $arch = x86_64
+then arch=amd64
+fi
+plat=$(uname|tr A-Z a-z)-$arch
+
+if [ -d "$env_dir" ]
+then
+    for key in GOVERSION
+    do
+        if [ -f "$env_dir/$key" ]
+        then
+            export "$key=$(cat "$env_dir/$key")"
+        fi
+    done
+fi
+
+ver=go${GOVERSION:-1.4.2}
+file=${GOFILE:-$ver.$(uname|tr A-Z a-z)-amd64$(platext $ver).tar.gz}
+url=${GOURL:-$(urlfor $ver $file)}
+
+if test -e $build/bin && ! test -d $build/bin
+then
+    echo >&2 " !     File bin exists and is not a directory."
+    exit 1
+fi
+
+if test -d $cache/$ver/go
+then
+    echo "-----> Using $ver"
+else
+    rm -rf $cache/* # be sure not to build up cruft
+    mkdir -p $cache/$ver
+    cd $cache/$ver
+    echo -n "-----> Installing $ver..."
+    curl -sO $url
+    tar zxf $file
+    rm -f $file
+    echo " done"
+    cd - >/dev/null
+fi
+
+GOROOT=$cache/$ver/go export GOROOT
+PATH=$GOROOT/bin:$PATH
+
+# Install gb
+GOPATH="$build/vendor" go install github.com/constabulary/gb/...
+
+# Build the project
+unset GIT_DIR # unset git dir or it will mess with goinstall
+cd $build
+echo "-----> Running: vendor/bin/gb build all"
+vendor/bin/gb build all | indent
+
+rm -rf $build/pkg
+rm -rf $build/vendor/bin
+rm -rf $build/vendor/pkg
+
+mkdir -p $build/.profile.d
+echo 'PATH=$PATH:$HOME/bin' > $build/.profile.d/go.sh
