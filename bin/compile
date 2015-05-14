@@ -61,7 +61,7 @@ plat=$(uname|tr A-Z a-z)-$arch
 
 if [ -d "$env_dir" ]
 then
-    for key in GOVERSION
+    for key in GOVERSION GOFILE GOURL
     do
         if [ -f "$env_dir/$key" ]
         then
