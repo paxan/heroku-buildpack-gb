@@ -70,7 +70,7 @@ then
     done
 fi
 
-ver=go${GOVERSION:-1.4.2}
+ver=go${GOVERSION:-1.5}
 file=${GOFILE:-$ver.$(uname|tr A-Z a-z)-amd64$(platext $ver).tar.gz}
 url=${GOURL:-$(urlfor $ver $file)}
 
