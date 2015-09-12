@@ -99,7 +99,19 @@ GOROOT=$cache/$ver/go export GOROOT
 PATH=$GOROOT/bin:$PATH
 
 # Install gb
-GOPATH="$build/vendor" go install github.com/constabulary/gb/...
+gb_src="$build/vendor/src/github.com/constabulary/gb"
+if [[ -d "$gb_src" ]]
+then
+    echo "-----> Found a vendored version of gb"
+else
+    echo "-----> WARNING: vendored version of gb was not found!"
+    echo "Downloading master version from https://github.com/constabulary/gb" | indent
+    mkdir -p "$gb_src"
+    curl -sL https://github.com/constabulary/gb/archive/master.tar.gz \
+    | tar -C "$gb_src" --strip-components=1 -xzf -
+fi
+echo "Installing gb" | indent
+GOPATH="$build/vendor" go install github.com/constabulary/gb/... 2>&1 | indent
 
 # Build the project
 unset GIT_DIR # unset git dir or it will mess with goinstall
