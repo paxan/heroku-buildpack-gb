@@ -3,6 +3,6 @@
 set -e
 
 if test -n "$(find "$1" -type f -name '*.go' | egrep "$1/(src|vendor/src)" | sed 1q)"
-then echo "gb-project"
+then echo "Go (GB)"
 else echo no; exit 1
 fi
