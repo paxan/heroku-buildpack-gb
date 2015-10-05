@@ -114,10 +114,15 @@ echo "Installing gb" | indent
 GOPATH="$build/vendor" go install github.com/constabulary/gb/... 2>&1 | indent
 
 # Build the project
+BUILD_COMMAND="gb build all"
+if [[ -x $build/bin/build ]]
+then
+    BUILD_COMMAND=bin/build
+fi
 unset GIT_DIR # unset git dir or it will mess with goinstall
 cd $build
-echo "-----> Running: vendor/bin/gb build all"
-vendor/bin/gb build all | indent
+echo "-----> Running: $BUILD_COMMAND"
+PATH=$PATH:$build/vendor/bin $BUILD_COMMAND | indent
 
 rm -rf $build/pkg
 rm -rf $build/vendor/bin
