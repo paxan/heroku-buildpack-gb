@@ -50,9 +50,8 @@ indent() {
 
 mkdir -p "$1" "$2"
 build=$(cd "$1/" && pwd)
-cache=$(cd "$2/" && pwd)
+cache_root=$(cd "$2/" && pwd)
 env_dir="$3"
-buildpack=$(cd "$(dirname ${BASH_SOURCE[0]})/.." && pwd)
 arch=$(uname -m|tr A-Z a-z)
 if test $arch = x86_64
 then arch=amd64
@@ -80,11 +79,13 @@ then
     exit 1
 fi
 
-if test -d $cache/$ver/go
+cache=$cache_root/gb
+
+if [[ -d $cache/$ver/go ]]
 then
     echo "-----> Using $ver"
 else
-    rm -rf $cache/go* # be sure not to build up cruft
+    rm -rf $cache # be sure not to build up cruft
     mkdir -p $cache/$ver
     cd $cache/$ver
     echo -n "-----> Installing $ver..."
