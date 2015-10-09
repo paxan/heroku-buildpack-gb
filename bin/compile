@@ -60,7 +60,7 @@ plat=$(uname|tr A-Z a-z)-$arch
 
 if [ -d "$env_dir" ]
 then
-    for key in GOVERSION GOFILE GOURL
+    for key in GOVERSION GOFILE GOURL WITH_GB_CACHING
     do
         if [ -f "$env_dir/$key" ]
         then
@@ -80,9 +80,9 @@ then
 fi
 
 cache=$cache_root/gb
+project=$cache/project
 
-if [[ -d $cache/$ver/go ]]
-then
+if [[ -d $cache/$ver/go ]]; then
     echo "-----> Using $ver"
 else
     rm -rf $cache # be sure not to build up cruft
@@ -96,11 +96,27 @@ else
     cd - >/dev/null
 fi
 
+# Prepare project
+if [[ -z "$WITH_GB_CACHING" ]]; then
+    rm -rf $project
+    RANDOM=$$$(date +%s)
+    declare -a silly=(yes ja yolo sure yup ok)
+    echo "-----> Performing a clean build"
+    echo "If you set WITH_GB_CACHING=${silly[$RANDOM % ${#silly[@]}]}," \
+         "gb will cache packages and build incrementally" | indent
+fi
+mkdir -p $build/src $build/bin $build/vendor/src
+mkdir -p $project/vendor
+rm -f $project/src $project/bin $project/vendor/src
+ln -s $build/src $project/src
+ln -s $build/bin $project/bin
+ln -s $build/vendor/src $project/vendor/src
+
 GOROOT=$cache/$ver/go export GOROOT
 PATH=$GOROOT/bin:$PATH
 
 # Install gb
-gb_src="$build/vendor/src/github.com/constabulary/gb"
+gb_src="$project/vendor/src/github.com/constabulary/gb"
 if [[ -d "$gb_src" ]]
 then
     echo "-----> Found a vendored version of gb"
@@ -112,7 +128,7 @@ else
     | tar -C "$gb_src" --strip-components=1 -xzf -
 fi
 echo "Installing gb" | indent
-GOPATH="$build/vendor" go install github.com/constabulary/gb/... 2>&1 | indent
+GOPATH="$project/vendor" go install github.com/constabulary/gb/... 2>&1 | indent
 
 # Build the project
 BUILD_COMMAND="gb build all"
@@ -121,13 +137,9 @@ then
     BUILD_COMMAND=bin/build
 fi
 unset GIT_DIR # unset git dir or it will mess with goinstall
-cd $build
+cd $project
 echo "-----> Running: $BUILD_COMMAND"
-PATH=$PATH:$build/vendor/bin $BUILD_COMMAND | indent
-
-rm -rf $build/pkg
-rm -rf $build/vendor/bin
-rm -rf $build/vendor/pkg
+PATH=vendor/bin:$PATH $BUILD_COMMAND | indent
 
 mkdir -p $build/.profile.d
 echo 'export PATH=$PATH:$HOME/bin' > $build/.profile.d/go.sh
