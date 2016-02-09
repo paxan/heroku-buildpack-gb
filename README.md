@@ -13,12 +13,12 @@ contains a `.go` file under `src/...` or `vendor/src/...`.
 
 Ensure your Heroku app is wired to use this buildpack:
 
-    heroku config:set BUILDPACK_URL=https://github.com/paxan/heroku-buildpack-gb.git
+    heroku buildpacks:set https://github.com/paxan/heroku-buildpack-gb.git
 
-This buildpack will default to the latest release of Go, but you can
+This buildpack strives to default to the latest release of Go, but you can
 override it if necessary. For example:
 
-    heroku config:set GOVERSION=1.4.1
+    heroku config:set GOVERSION=1.5.1
 
 ## Credits
 
