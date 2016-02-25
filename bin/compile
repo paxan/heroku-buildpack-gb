@@ -129,4 +129,4 @@ rm -rf $build/vendor/bin
 rm -rf $build/vendor/pkg
 
 mkdir -p $build/.profile.d
-echo 'PATH=$PATH:$HOME/bin' > $build/.profile.d/go.sh
+echo 'PATH=$PATH:$HOME/bin' > $build/.profile.d/gbprofile.sh
