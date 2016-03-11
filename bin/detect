@@ -2,7 +2,11 @@
 # bin/detect <build-dir>
 set -e
 
-if test -n "$(find "$1" -type f -name '*.go' | egrep "$1/(src|vendor/src)" | sed 1q)"
-then echo "Go (GB)"
-else echo no; exit 1
+build=$(cd "$1/" && pwd)
+
+if [[ -n "$(find "$build" -type f -name '*.go' | egrep "$build/(src|vendor/src)" | sed 1q)" ]]; then
+    echo "Go (GB)"
+else
+    echo no
+    exit 1
 fi
