@@ -6,7 +6,7 @@ organized as prescribed by [gb][gb] tool.
 It requires that `gb` itself is also vendored just like any other
 third-party packages your project might be using.
 
-This buildpack will detect your repository as `gb-project` if it
+This buildpack will detect your repository as `Go (GB)` if it
 contains a `.go` file under `src/...` or `vendor/src/...`.
 
 ## Usage
