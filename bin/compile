@@ -68,9 +68,7 @@ then
 else
     echo "-----> WARNING: vendored version of gb was not found!"
     echo "Downloading master version from https://github.com/constabulary/gb" | indent
-    mkdir -p "$gb_src"
-    curl -sL https://github.com/constabulary/gb/archive/master.tar.gz \
-    | tar -C "$gb_src" --strip-components=1 -xzf -
+    GOPATH="$build/vendor" go get -d github.com/constabulary/gb/... 2>&1 | indent
 fi
 echo "-----> Installing gb"
 GOPATH="$build/vendor" go install github.com/constabulary/gb/... 2>&1 | indent
