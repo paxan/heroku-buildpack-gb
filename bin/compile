@@ -35,7 +35,7 @@ if [[ -d "$env_dir" ]]; then
     done
 fi
 
-ver=go${GOVERSION:-1.6.2}
+ver=go${GOVERSION:-1.7.1}
 file=${GOFILE:-$ver.$plat.tar.gz}
 url=${GOURL:-https://storage.googleapis.com/golang/$file}
 
